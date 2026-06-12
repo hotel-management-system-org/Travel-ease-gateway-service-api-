@@ -6,16 +6,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class CorsConfig {
+public class GatewayRouteConfig {
 
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
+
                 .route("booking-service", r -> r
                         .path("/booking-service/api/bookings/**")
                         .filters(f -> f
                                 .rewritePath("/booking-service/api/bookings/(?<segment>.*)",
-                                             "/bookings-service/api/v1/bookings/${segment}"
+                                        "/booking-service/api/v1/bookings/${segment}"
                                 )
                         )
                         .uri("lb://BOOKING-SERVICE-API")
@@ -24,34 +25,27 @@ public class CorsConfig {
                 .route("payment-service", r -> r
                         .path("/api/payments/**")
                         .filters(f -> f
-                                .rewritePath(
-                                        "/api/payments(?<segment>/?.*)",
+                                .rewritePath("/api/payments(?<segment>/?.*)",
                                         "/api/v1/payments${segment}"
                                 )
                         )
                         .uri("lb://PAYMENT-SERVICE-API")
                 )
+
                 .route("hotel-service", r -> r
-                        .path("/hotel-service/api/hotels/**")
-                        .or()
-                        .path("/hotel-service/api/rooms/**")
+                        .path("/hotel-service/api/hotels/**", "/hotel-service/api/rooms/**")
                         .filters(f -> f
-                                .rewritePath(
-                                        "/hotel-service/api/hotels(?<segment>/?.*)",
-                                        "/hotel-service/api/v1/hotels${segment}"
-                                )
-                                .rewritePath(
-                                        "/hotel-service/api/rooms(?<segment>/?.*)",
-                                        "/hotel-service/api/v1/rooms${segment}"
+                                .rewritePath("/hotel-service/api/(?<category>hotels|rooms)(?<segment>/?.*)",
+                                        "/hotel-service/api/v1/${category}${segment}"
                                 )
                         )
                         .uri("lb://HOTEL-SERVICE-API")
                 )
+
                 .route("user-service", r -> r
                         .path("/user-service/api/users/**")
                         .filters(f -> f
-                                .rewritePath(
-                                        "/user-service/api/users(?<segment>/?.*)",
+                                .rewritePath("/user-service/api/users(?<segment>/?.*)",
                                         "/user-service/api/v1/users${segment}"
                                 )
                         )
@@ -59,6 +53,4 @@ public class CorsConfig {
                 )
                 .build();
     }
-
-
 }
