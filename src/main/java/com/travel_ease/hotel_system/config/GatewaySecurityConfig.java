@@ -11,8 +11,9 @@ import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoders;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,19 +27,20 @@ public class GatewaySecurityConfig {
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-        http
+        return http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-            .authorizeExchange(exchanges -> exchanges
-                    .pathMatchers("/user-service/api/users/visitors/**").permitAll()
-                    .pathMatchers("/hotel-service/api/hotels/visitors/**").permitAll()
-                    .pathMatchers("/hotel-service/api/hotels/policy/visitors/**").permitAll()
-                    .pathMatchers("/hotel-service/api/rooms/visitor/**").permitAll()
-                    .pathMatchers(HttpMethod.OPTIONS).permitAll()
-                .anyExchange().authenticated()
-            )
-            .oauth2ResourceServer(ServerHttpSecurity.OAuth2ResourceServerSpec::jwt);
-        
-        return http.build();
+                .authorizeExchange(exchanges -> exchanges
+                      /*  .pathMatchers("/api/users/visitors/**").permitAll()
+                        .pathMatchers("/api/hotels/visitors/**").permitAll()
+                        .pathMatchers("/api/hotels/policy/visitors/**").permitAll()
+                        .pathMatchers("/api/rooms/visitor/**").permitAll()
+                        .pathMatchers(HttpMethod.OPTIONS).permitAll()
+                        .anyExchange().authenticated()*/
+                        .anyExchange().permitAll()
+                )
+                /*.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}))*/
+                .build();
     }
 
     @Bean
@@ -46,26 +48,17 @@ public class GatewaySecurityConfig {
         return ReactiveJwtDecoders.fromIssuerLocation(authIssueUri);
     }
 
-
     @Bean
-    public CorsWebFilter corsWebFilter() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-
-        corsConfig.setAllowedOrigins(List.of("http://localhost:4200"));
-
-        corsConfig.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
-        ));
-
+        corsConfig.setAllowedOrigins(List.of("*"));
+        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         corsConfig.setAllowedHeaders(List.of("*"));
-        corsConfig.setAllowCredentials(true);
+        corsConfig.setAllowCredentials(false);
         corsConfig.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfig);
-
-        return new CorsWebFilter(source);
+        return source;
     }
-
-
 }
